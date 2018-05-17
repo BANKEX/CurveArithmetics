@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.4.23;
 
 /**
  * @title ECCMath
@@ -73,7 +73,7 @@ library ECCMath {
     /// @param PJ The point.
     /// @param prime The prime modulus.
     /// @return (Px', Py', 1)
-    function toZ1(uint[3] PJ, uint prime) internal view {
+    function toZ1(uint[3] PJ, uint prime) internal pure {
         uint zInv = invmod(PJ[2], prime);
         uint zInv2 = mulmod(zInv, zInv, prime);
         PJ[0] = mulmod(PJ[0], zInv2, prime);

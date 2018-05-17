@@ -1,14 +1,11 @@
-pragma solidity ^0.4.24;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.4.23;
 
 import {ECCMath} from "./ECCMath.sol";
 
-// interface CurveInterface {
-//     function _add(uint[3] P, uint[3] Q) external view returns (uint[3] R);
-//     function _addMixed(uint[3] P, uint[2] Q) external view returns (uint[3] R);
-//     function _double(uint[3] P) external view returns (uint[3] Q);
-//     function _mul(uint d, uint[2] P) external view returns (uint[3] Q);
-// }
+interface CurveInterface {
+    function getOrder() external view returns(uint order);
+    function validateSignature(bytes32 message, uint[2] rs, uint[2] Q) external view returns (bool);
+}
 
 /**
  * @title Particular curve implementation
@@ -45,14 +42,6 @@ contract Curve {
 
     uint[3] public pointOfInfinity = [0, 1, 0];
 
-    struct JacobianPoint {
-        uint256[3] coords;
-    }
-
-    struct AffinePoint {
-        uint256[2] coords;
-    }
-
     constructor (uint256 fieldSize, uint256 groupOrder, uint256 lowS, uint256 cofactor, uint256[2] generator, uint256 a, uint256 b) public {
         pp = fieldSize;
         nn = groupOrder;
@@ -68,15 +57,17 @@ contract Curve {
         uint det2 = mulmod(b,b,fieldSize); //b^2
         det2 = mulmod(27,det2,fieldSize); //27*b^2
         require(addmod(det, det2, fieldSize) != 0); // 4*a^3 + 27*b^2 != 0
+        if (lowSmax == 0) {
+            lowSmax = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
+        }
     }
 
     function getPointOfInfinity() public view returns (uint[3] Q) {
         return pointOfInfinity;
     }
 
-    function addPoints(JacobianPoint P, JacobianPoint Q) public view returns (JacobianPoint R) {
-        R.coords = _add(P.coords, Q.coords);
-        return R;
+    function getOrder() public view returns(uint order) {
+        return nn;
     }
 
     // Point addition, P + Q
@@ -123,10 +114,6 @@ contract Curve {
         return R;
     }
 
-    function addPointsMixed(JacobianPoint P, AffinePoint Q) public view returns (JacobianPoint R) {
-        R.coords = _addMixed(P.coords, Q.coords);
-        return R;
-    }
 
     // Point addition, P + Q. P Jacobian, Q affine.
     // inData: Px, Py, Pz, Qx, Qy
@@ -167,11 +154,6 @@ contract Curve {
         return R;
     }
 
-    function doublePoint(JacobianPoint P) public view returns (JacobianPoint Q) {
-        Q.coords = _double(P.coords);
-        return Q;
-    }
-
     // Point doubling, 2*P
     // Params: Px, Py, Pz
     // Not concerned about the 1 extra mulmod.
@@ -193,11 +175,6 @@ contract Curve {
         Q[0] = Qx;
         Q[1] = addmod(mulmod(m, addmod(s, p - Qx, p), p), p - mulmod(8, mulmod(Py2, Py2, p), p), p);
         Q[2] = mulmod(2, mulmod(Py, P[2], p), p);
-        return Q;
-    }
-
-    function mulPoint(uint256 d, AffinePoint P) public view returns (JacobianPoint Q) {
-        Q.coords = _mul(d, P.coords);
         return Q;
     }
 
@@ -267,11 +244,6 @@ contract Curve {
         return Q;
     }
 
-    function onCurveAsPoint(AffinePoint P) public view returns (bool) {
-        return onCurve(P.coords);
-    }
-
-
     function onCurve(uint[2] P) public view returns (bool) {
         uint p = pp;
         uint a = aa;
@@ -289,18 +261,10 @@ contract Curve {
         return LHS == RHS;
     }
 
-    function isPubKeyAsPoint(AffinePoint P) public view returns (bool) {
-        return isPubKey(P.coords);
-    }
-
     /// @dev See Curve.isPubKey
     function isPubKey(uint[2] P) public view returns (bool isPK) {
         isPK = onCurve(P);
         return isPK;
-    }
-
-    function validateSignatureAsPoints(bytes32 message, AffinePoint rs, AffinePoint Q) public view returns (bool) {
-        return validateSignature(message, rs.coords, Q.coords);
     }
 
     /// @dev See Curve.validateSignature
@@ -326,7 +290,6 @@ contract Curve {
     }
 
     function computePublicKey(uint priv) public view returns(uint[2] Q) {
-        uint p = pp;
         uint[2] memory generator = [Gx, Gy];
         uint[3] memory P = _mul(priv, generator);
         return toAffine(P);
@@ -343,14 +306,8 @@ contract Curve {
         s = mulmod(priv, r, n);
         s = addmod(uint(message), s, n);
         uint k_1 = ECCMath.invmod(k, n); 
-        // return (k_1, s);
         s = mulmod(k_1, s, n);
         return (r, s);
-    }
-
-
-    function compressAsPoint(AffinePoint P) public pure returns (uint8 yBit, uint x) {
-        return compress(P.coords);
     }
 
     /// @dev See Curve.compress
@@ -358,11 +315,6 @@ contract Curve {
         x = P[0];
         yBit = P[1] & 1 == 1 ? 1 : 0;
         return (yBit, x);
-    }
-
-    function decompressToPoint(uint8 yBit, uint x) public view returns (AffinePoint P) {
-        P.coords = decompress(yBit, x);
-        return P;
     }
 
     /// @dev See Curve.decompress
@@ -381,8 +333,9 @@ contract Curve {
         if (p % 4 == 3) {
             y_ = ECCMath.expmod(y2, (p + 1) / 4, p);
         } else {
+            return;
             //TODO general algo or other fact methods here
-            revert();
+            // revert();
         }
         uint cmp = yBit ^ y_ & 1;
         P[0] = x;

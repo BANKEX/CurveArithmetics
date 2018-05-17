@@ -1,3 +1,4 @@
 .build
 node_modules
 test/internal*.js
+contracts/TreasureChests.sol
