@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 /**
  * @title ECCMath
@@ -13,8 +13,23 @@ library ECCMath {
     /// @param a The number.
     /// @param p The mmodulus.
     /// @return x such that ax = 1 (mod p)
-    function invmod(uint a, uint p) internal view returns (uint) {
-        return expmod(a, p - 2, p);
+    function invmod(uint a, uint p) internal pure returns (uint) {
+        if (a == 0 || a == p || p == 0)
+            return 0;
+        if (a > p)
+            a = a % p;
+        int t1;
+        int t2 = 1;
+        uint r1 = p;
+        uint r2 = a;
+        uint q;
+        while (r2 != 0) {
+            q = r1 / r2;
+            (t1, t2, r1, r2) = (t2, t1 - int(q) * t2, r2, r1 - q * r2);
+        }
+        if (t1 < 0)
+            return (p - uint(-t1));
+        return uint(t1);
     }
 
     /// @dev Modular exponentiation, b^e % m

@@ -37,7 +37,7 @@ async function createSECP256K1() {
 } 
 
 contract('Crypto', function (accounts) {
-    return
+    return;
     operator = accounts[0];
 
     describe('Secp256k1Arith', function () {
@@ -57,12 +57,6 @@ contract('Crypto', function (accounts) {
                     const randPoint = testdata.randomPoints[idx];
                     let result = await secp256k1._add(randPoint, testdata.randomPoints[idx - 1]);
                     result = await secp256k1.toAffine(result);
-                    // const P = ec.curve.jpoint(randPoint[0], randPoint[1], randPoint[2]);
-                    // const Q = ec.curve.jpoint(testdata.randomPoints[idx - 1][0], testdata.randomPoints[idx - 1][1], testdata.randomPoints[idx - 1][2]);
-                    // const sum = P.add(Q);
-                    // const pp = await secp256k1.pp();
-                    // const modulus = new BN(pp.toString(10));
-                    // const intermediate = addJacobian(randPoint, testdata.randomPoints[idx - 1], modulus);
                     const expected = testdata.sums[idx - 1];
                     assert(result[0].eq(expected[0]));
                     assert(result[1].eq(expected[1]));
@@ -210,7 +204,10 @@ contract('Crypto', function (accounts) {
 
             it('should verify that doubling the point at infinity yields the point at infinity', async () =>  {
                 const result = await secp256k1._double([ZERO, ZERO, ZERO]);
-                assert(isPaI(result));
+                const infinityPoint = await secp256k1.getPointOfInfinity();
+                assert(result[0].eq(infinityPoint[0]));
+                assert(result[1].eq(infinityPoint[1]));
+                assert(result[2].eq(infinityPoint[2]));
             });
 
         });
@@ -251,7 +248,10 @@ contract('Crypto', function (accounts) {
             it('should verify that multiplying a point with 0 yields the point at infinity', async () =>  {
                 var P = testdata.randomPoints[0];
                 const result = await secp256k1._mul(0, P);
-                assert(isPaI(result));
+                const infinityPoint = await secp256k1.getPointOfInfinity();
+                assert(result[0].eq(infinityPoint[0]));
+                assert(result[1].eq(infinityPoint[1]));
+                assert(result[2].eq(infinityPoint[2]));
             });
 
         });
@@ -259,10 +259,6 @@ contract('Crypto', function (accounts) {
     });
 
 });
-
-function isPaI(point) {
-    return point[0].toNumber() === 0 && point[1].toNumber() === 0 && point[2].toNumber() === 0;
-}
 
 function addJacobian(point1, point2, modulus) {
     const red = BN.red(modulus);

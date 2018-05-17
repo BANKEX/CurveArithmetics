@@ -11,7 +11,7 @@ t.init();
 
 
 contract('Curve', async (accounts) => {
-    return
+    return;
     var curve;
     var curveFactory;
     const operator = accounts[0]

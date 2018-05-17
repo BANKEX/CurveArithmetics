@@ -1,16 +1,15 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
-import {ECCMath} from "./ECCMath.sol";
-import {Curve} from "./Arithmetics.sol";
+import {Curve} from "./Curve.sol";
 /**
- * @title Curve factory
- *
- * Factory to create curve arithmetics contracts.
- *
- * Takes curve parameters and produces a new contract.
- *
- * @author Alexander Vlasov (alex.m.vlasov@gmail.com).
- */
+* @title Curve factory
+*
+* Factory to create curve arithmetics contracts.
+*
+* Takes curve parameters and produces a new contract.
+*
+* @author Alexander Vlasov (alex.m.vlasov@gmail.com).
+*/
 
 contract GenericCurveFactory {
     event CurveCreated(address indexed newCurve);

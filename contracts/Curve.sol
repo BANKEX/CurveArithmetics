@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
 import {ECCMath} from "./ECCMath.sol";
@@ -43,6 +43,8 @@ contract Curve {
     // Maximum value of s
     uint public lowSmax;
 
+    uint[3] public pointOfInfinity = [0, 1, 0];
+
     struct JacobianPoint {
         uint256[3] coords;
     }
@@ -66,6 +68,10 @@ contract Curve {
         uint det2 = mulmod(b,b,fieldSize); //b^2
         det2 = mulmod(27,det2,fieldSize); //27*b^2
         require(addmod(det, det2, fieldSize) != 0); // 4*a^3 + 27*b^2 != 0
+    }
+
+    function getPointOfInfinity() public view returns (uint[3] Q) {
+        return pointOfInfinity;
     }
 
     function addPoints(JacobianPoint P, JacobianPoint Q) public view returns (JacobianPoint R) {
@@ -98,7 +104,7 @@ contract Curve {
         // Pu, Ps, Qu, Qs
         if (us[0] == us[2]) {
             if (us[1] != us[3])
-                return;
+                return pointOfInfinity;
             else {
                 return _double(P);
             }
@@ -142,7 +148,7 @@ contract Curve {
         ]; // Pu, Ps, Qu, Qs
         if (us[0] == us[2]) {
             if (us[1] != us[3]) {
-                return;
+                return pointOfInfinity;
             }
             else {
                 return _double(P);
@@ -173,7 +179,7 @@ contract Curve {
         uint p = pp;
         uint a = aa;
         if (P[2] == 0)
-            return;
+            return pointOfInfinity;
         uint Px = P[0];
         uint Py = P[1];
         uint Py2 = mulmod(Py, Py, p);
@@ -198,103 +204,10 @@ contract Curve {
     // Multiplication dP. P affine, wNAF: w=5
     // Params: d, Px, Py
     // Output: Jacobian Q
-    function _mul2(uint d, uint[2] P) public view returns (uint[3] Q) {
-        uint p = pp;
-        if (d == 0) {// TODO
-            // return;
-            Q[0] = 0;
-            Q[1] = 1;
-            Q[2] = 0;
-            return Q;
-        }
-        uint dwPtr; // points to array of NAF coefficients.
-        uint i;
-
-        // wNAF
-        assembly
-        {
-            let dm := 0
-            dwPtr := mload(0x40)
-            mstore(0x40, add(dwPtr, 512)) // Should lower this.
-        loop:
-            jumpi(loop_end, iszero(d))
-            jumpi(even, iszero(and(d, 1)))
-            dm := mod(d, 32)
-            mstore8(add(dwPtr, i), dm) // Don't store as signed - convert when reading.
-            d := add(sub(d, dm), mul(gt(dm, 16), 32))
-        even:
-            d := div(d, 2)
-            i := add(i, 1)
-            jump(loop)
-        loop_end:
-        }
-
-        // Pre calculation
-        uint[3][8] memory PREC; // P, 3P, 5P, 7P, 9P, 11P, 13P, 15P
-        PREC[0] = [P[0], P[1], 1];
-        uint[3] memory X = _double(PREC[0]);
-        PREC[1] = _addMixed(X, P);
-        PREC[2] = _add(X, PREC[1]);
-        PREC[3] = _add(X, PREC[2]);
-        PREC[4] = _add(X, PREC[3]);
-        PREC[5] = _add(X, PREC[4]);
-        PREC[6] = _add(X, PREC[5]);
-        PREC[7] = _add(X, PREC[6]);
-
-        uint[16] memory INV;
-        INV[0] = PREC[1][2];                            // a1
-        INV[1] = mulmod(PREC[2][2], INV[0], p);         // a2
-        INV[2] = mulmod(PREC[3][2], INV[1], p);         // a3
-        INV[3] = mulmod(PREC[4][2], INV[2], p);         // a4
-        INV[4] = mulmod(PREC[5][2], INV[3], p);         // a5
-        INV[5] = mulmod(PREC[6][2], INV[4], p);         // a6
-        INV[6] = mulmod(PREC[7][2], INV[5], p);         // a7
-
-        INV[7] = ECCMath.invmod(INV[6], p);             // a7inv
-        INV[8] = INV[7];                                // aNinv (a7inv)
-
-        INV[15] = mulmod(INV[5], INV[8], p);            // z7inv
-        for(uint k = 6; k >= 2; k--) {                  // z6inv to z2inv
-            INV[8] = mulmod(PREC[k + 1][2], INV[8], p);
-            INV[8 + k] = mulmod(INV[k - 2], INV[8], p);
-        }
-        INV[9] = mulmod(PREC[2][2], INV[8], p);         // z1Inv
-        for(k = 0; k < 7; k++) {
-            ECCMath.toZ1(PREC[k + 1], INV[k + 9], mulmod(INV[k + 9], INV[k + 9], p), p);
-        }
-
-        // Mult loop
-        while(i > 0) {
-            uint dj;
-            uint pIdx;
-            i--;
-            assembly {
-                dj := byte(0, mload(add(dwPtr, i)))
-            }
-            Q = _double(Q);
-            if (dj > 16) {
-                pIdx = (31 - dj) / 2; // These are the "negative ones", so invert y.
-                Q = _addMixed(Q, [PREC[pIdx][0], p - PREC[pIdx][1]]);
-            }
-            else if (dj > 0) {
-                pIdx = (dj - 1) / 2;
-                Q = _addMixed(Q, [PREC[pIdx][0], PREC[pIdx][1]]);
-            }
-        }
-        return Q;
-    }
-
-    // Multiplication dP. P affine, wNAF: w=5
-    // Params: d, Px, Py
-    // Output: Jacobian Q
     function _mul(uint d, uint[2] P) public view returns (uint[3] Q) {
         uint p = pp;
-        if (d == 0) {// TODO
-            // return;
-            Q[0] = 1;
-            Q[1] = 1;
-            Q[2] = 0;
-            return Q;
+        if (d == 0) {
+            return pointOfInfinity;
         }
         uint dwPtr; // points to array of NAF coefficients.
         uint i;
@@ -346,6 +259,9 @@ contract Curve {
             else if (dj > 0) {
                 pIdx = (dj - 1) / 2;
                 Q = _add(Q, [PREC[pIdx][0], PREC[pIdx][1], PREC[pIdx][2] ]);
+            }
+            if (Q[0] == pointOfInfinity[0] && Q[1] == pointOfInfinity[1] && Q[2] == pointOfInfinity[2]) {
+                return Q;
             }
         }
         return Q;
