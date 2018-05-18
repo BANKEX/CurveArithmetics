@@ -1,8 +1,9 @@
+const env = process.env;
 
-
-// const Web3 = require('web3');
-// const web3 = new Web3();
-
+// don't load .env file in prod
+if (env.NODE_ENV !== 'production') {
+    require('dotenv').load();
+}
 
 // Using the IPC provider in node.js
 // var net = require('net');
@@ -12,6 +13,14 @@ module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
     networks: {
+        ropsten: {
+            provider: function() {
+                let WalletProvider = require("truffle-wallet-provider");
+                let wallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(env.ETH_KEY, 'hex'));
+                return new WalletProvider(wallet, "https://rinkeby.infura.io/" + env.INFURA_TOKEN)
+            },
+            network_id: 3
+        },
         ganache: {
             host: "127.0.0.1",
             gas: 7000000,
