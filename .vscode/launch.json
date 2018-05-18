@@ -11,6 +11,14 @@
         "program": "${workspaceRoot}/node_modules/truffle/build/cli.bundled.js",
         "args": ["test"],
         "cwd": "${workspaceRoot}",
+    },
+    {
+        "name": "run deploy",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceRoot}/node_modules/truffle/build/cli.bundled.js",
+        "args": ["deploy"],
+        "cwd": "${workspaceRoot}",
     }
     ]
 }
