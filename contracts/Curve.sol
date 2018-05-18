@@ -5,6 +5,7 @@ import {ECCMath} from "./ECCMath.sol";
 interface CurveInterface {
     function getOrder() external view returns(uint order);
     function validateSignature(bytes32 message, uint[2] rs, uint[2] Q) external view returns (bool);
+    function computePublicKey(uint priv) external view returns(uint[2] Q);
 }
 
 /**
@@ -302,7 +303,7 @@ contract Curve {
         uint[2] memory generator = [Gx, Gy];
         uint[3] memory P = _mul(k, generator);
         ECCMath.toZ1(P, p);
-        r = P[0];
+        r = P[0] % n;
         s = mulmod(priv, r, n);
         s = addmod(uint(message), s, n);
         uint k_1 = ECCMath.invmod(k, n); 
@@ -333,9 +334,9 @@ contract Curve {
         if (p % 4 == 3) {
             y_ = ECCMath.expmod(y2, (p + 1) / 4, p);
         } else {
-            return;
+            // return;
             //TODO general algo or other fact methods here
-            // revert();
+            revert();
         }
         uint cmp = yBit ^ y_ & 1;
         P[0] = x;
