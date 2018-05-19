@@ -3,3 +3,4 @@ node_modules
 test/internal*.js
 .env
 migrations/2_*
+migrations/3_*

@@ -6,10 +6,10 @@ import {IInstance} from "./IInstance.sol";
 
 contract TreasureChestInstance is IInstance
 {  
-    address curve;
-    uint256[2] publicKey;
-    bytes32 messageHash;
-    bool isOpen;
+    address public curve;
+    uint256[2] public publicKey;
+    bytes32 public messageHash;
+    bool public isOpen;
 
     constructor(address _curve, bytes32 _messageHash, uint[2] _publicKey) public
     {
@@ -29,7 +29,7 @@ contract TreasureChestInstance is IInstance
         return true;
     }
 
-    function status() public returns(bool) {
+    function status() public view returns(bool) {
         return isOpen;
     }
 

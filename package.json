@@ -13,7 +13,8 @@
     "elliptic": "^6.4.0",
     "ethereumjs-util": "^5.2.0",
     "truffle": "^4.1.8",
-    "truffle-test-utils": "^0.1.0"
+    "truffle-test-utils": "^0.1.0",
+    "truffle-wallet-provider": "0.0.5"
   },
   "devDependencies": {},
   "scripts": {

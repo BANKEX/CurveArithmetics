@@ -13,13 +13,13 @@ module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
     networks: {
-        ropsten: {
+        rinkeby: {
             provider: function() {
                 let WalletProvider = require("truffle-wallet-provider");
                 let wallet = require('ethereumjs-wallet').fromPrivateKey(Buffer.from(env.ETH_KEY, 'hex'));
                 return new WalletProvider(wallet, "https://rinkeby.infura.io/" + env.INFURA_TOKEN)
             },
-            network_id: 3
+            network_id: 4
         },
         ganache: {
             host: "127.0.0.1",
