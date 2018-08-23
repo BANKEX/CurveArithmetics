@@ -1,4 +1,4 @@
-const Curve = artifacts.require("Curve.sol");
+const TestCurve = artifacts.require("Curve.sol");
 const CurveFactory = artifacts.require("GenericCurveFactory.sol");
 const util = require("util");
 const testdata = require('./data/secp2561k_data.json');
@@ -7,11 +7,12 @@ const ethUtil = require("ethereumjs-util");
 const assert = require("assert");
 const t = require('truffle-test-utils')
 t.init();
+
+const secp256k1Data = require('./data/curves/secp256k1').curve;
 // const expectThrow = require("../helpers/expectThrow");
 
 
 contract('Curve', async (accounts) => {
-    return;
     var curve;
     var curveFactory;
     const operator = accounts[0]
@@ -20,18 +21,9 @@ contract('Curve', async (accounts) => {
     })
 
     async function createSECP256K1() {
-        const fieldSize = new BN("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F", 16);
-        const groupOrder = new BN("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141", 16);
-        const cofactor = new BN(1);
-        const Gx = new BN("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16);
-        const Gy = new BN("483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8", 16);
-        const lowSmax = new BN("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0", 16);
-        const A = new BN(0);
-        const B = new BN(7);
-
-        const secp256k1 = await curveFactory.createCurve([fieldSize], [groupOrder], [lowSmax], [cofactor], [Gx, Gy], [A], [B], {from: operator});
+        const secp256k1 = await curveFactory.createCurve([secp256k1Data.fieldSize], [secp256k1Data.groupOrder], [secp256k1Data.lowSmax], [secp256k1Data.cofactor], [secp256k1Data.Gx, secp256k1Data.Gy], [secp256k1Data.A], [secp256k1Data.B], {from: operator});
         const newCurve = secp256k1.logs[0].args.newCurve;
-        return Curve.at(newCurve);
+        return TestCurve.at(newCurve);
     }
 
     async function createPrime256v1() {
@@ -46,7 +38,7 @@ contract('Curve', async (accounts) => {
 
         const secp256k1 = await curveFactory.createCurve([fieldSize], [groupOrder], [lowSmax], [cofactor], [Gx, Gy], [A], [B], {from: operator});
         const newCurve = secp256k1.logs[0].args.newCurve;
-        return Curve.at(newCurve);
+        return TestCurve.at(newCurve);
     }
 
     it('check SECP256K1', async () => {
