@@ -16,8 +16,7 @@ contract TreasureChests
 
     Vault[] public treasures;
 
-    constructor(address[] _curves, uint[] _publicKeys) public
-    {
+    constructor(address[] _curves, uint[] _publicKeys) public {
         require(_curves.length * 2 == _publicKeys.length);
         uint256[2] memory pubkey = [uint256(0), uint256(0)];
         for (uint256 i = 0; i < _curves.length; i++) {
@@ -34,21 +33,21 @@ contract TreasureChests
         }
     }
 
-    function findTreasure(uint256 i, string message, uint256[2] sig) public returns (bool success)
-    {
+    function findTreasure(uint256 i, string message, uint256[2] sig) public returns (bool) {
         Vault storage vault = treasures[i];
         require(vault.curve != address(0));
         CurveInterface curve = CurveInterface(vault.curve);
         bytes32 messageHash = keccak256(abi.encodePacked(message));
-        bool isValid = curve.validateSignature(messageHash, sig, vault.publicKey);
-        if (!isValid) {
+        if (!curve.validateSignature(messageHash, sig, vault.publicKey)) {
             return false;
         }
+
         if (vault.thePirate == address(0)) {
             vault.thePirate = msg.sender;
             vault.isOpen = true;
             vault.yohoho = message;
         }
+
         return true;
     }
 }
