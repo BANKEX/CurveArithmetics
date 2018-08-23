@@ -6,6 +6,10 @@
   "directories": {
     "test": "test"
   },
+    "scripts": {
+    "report": "truffle test",
+    "lint": "solium --dir ./contracts"
+  },
   "dependencies": {
     "async": "^2.6.0",
     "bn.js": "^4.11.8",
@@ -16,9 +20,8 @@
     "truffle-test-utils": "^0.1.0",
     "truffle-wallet-provider": "0.0.5"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "truffle test"
+  "devDependencies": {
+      "solium": "^1.0.4",
   },
   "repository": {
     "type": "git",
