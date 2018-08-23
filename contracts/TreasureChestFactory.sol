@@ -19,7 +19,7 @@ contract TreasureChestFactory is IFactory{
         difficulty = _difficulty;
     }
 
-    function deploy() public returns(address) {
+    function deploy() public returns (address) {
         counter = counter + 1;
         bytes32 messageHash = keccak256(abi.encodePacked(name, counter));
         TreasureChestInstance newOne = new TreasureChestInstance(curve, messageHash, publicKey);
@@ -27,10 +27,11 @@ contract TreasureChestFactory is IFactory{
         return address(newOne);
     }
 
-    function factoryName() public view returns(string) {
+    function factoryName() public view returns (string) {
         return name;
     }
-    function factoryAmount() public view returns(uint) {
+
+    function factoryAmount() public view returns (uint) {
         return difficulty;
     }
 }

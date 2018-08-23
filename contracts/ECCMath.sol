@@ -8,6 +8,7 @@ pragma solidity ^0.4.23;
  * @author Andreas Olofsson (androlo1980@gmail.com). Reworked by Alexander Vlasov (alex.m.vlasov@gmail.com)
  */
 library ECCMath {
+
     /// @dev Modular inverse of a (mod p) using euclid.
     /// 'a' and 'p' must be co-prime.
     /// @param a The number.

@@ -43,7 +43,7 @@ contract Curve {
 
     uint[3] public pointOfInfinity = [0, 1, 0];
 
-    constructor (uint256 fieldSize, uint256 groupOrder, uint256 lowS, uint256 cofactor, uint256[2] generator, uint256 a, uint256 b) public {
+    constructor(uint256 fieldSize, uint256 groupOrder, uint256 lowS, uint256 cofactor, uint256[2] generator, uint256 a, uint256 b) public {
         pp = fieldSize;
         nn = groupOrder;
         lowSmax = lowS;
@@ -63,11 +63,11 @@ contract Curve {
         }
     }
 
-    function getPointOfInfinity() public view returns (uint[3] Q) {
+    function getPointOfInfinity() public view returns (uint[3]) {
         return pointOfInfinity;
     }
 
-    function getOrder() public view returns(uint order) {
+    function getOrder() public view returns (uint) {
         return nn;
     }
 
@@ -75,9 +75,10 @@ contract Curve {
     // inData: Px, Py, Pz, Qx, Qy, Qz
     // outData: Rx, Ry, Rz
     function _add(uint[3] P, uint[3] Q) 
-    public 
-    view 
-    returns (uint[3] R) {
+        public
+        view
+        returns (uint[3])
+    {
         if(P[2] == 0)
             return Q;
         if(Q[2] == 0)
@@ -108,6 +109,8 @@ contract Curve {
         uint Rx = addmod(mulmod(r, r, p), p - h3, p);
         uint uh2 = mulmod(us[0], h2, p);
         Rx = addmod(Rx, p - mulmod(2, uh2, p), p);
+
+        uint[3] memory R;
         R[0] = Rx;
         R[1] = mulmod(r, addmod(uh2, p - Rx, p), p);
         R[1] = addmod(R[1], p - mulmod(us[1], h3, p), p);
@@ -119,7 +122,7 @@ contract Curve {
     // Point addition, P + Q. P Jacobian, Q affine.
     // inData: Px, Py, Pz, Qx, Qy
     // outData: Rx, Ry, Rz
-    function _addMixed(uint[3] P, uint[2] Q) public view returns (uint[3] R) {
+    function _addMixed(uint[3] P, uint[2] Q) public view returns (uint[3]) {
         if(P[2] == 0)
             return [Q[0], Q[1], 1];
         if(Q[1] == 0)
@@ -148,6 +151,8 @@ contract Curve {
         uint h3 = mulmod(h2, h, p);
         uint Rx = addmod(mulmod(r, r, p), p - h3, p);
         Rx = addmod(Rx, p - mulmod(2, mulmod(us[0], h2, p), p), p);
+
+        uint[3] memory R;
         R[0] = Rx;
         R[1] = mulmod(r, addmod(mulmod(us[0], h2, p), p - Rx, p), p);
         R[1] = addmod(R[1], p - mulmod(us[1], h3, p), p);
@@ -158,7 +163,7 @@ contract Curve {
     // Point doubling, 2*P
     // Params: Px, Py, Pz
     // Not concerned about the 1 extra mulmod.
-    function _double(uint[3] P) public view returns (uint[3] Q) {
+    function _double(uint[3] P) public view returns (uint[3]) {
         uint p = pp;
         uint a = aa;
         if (P[2] == 0)
@@ -173,6 +178,8 @@ contract Curve {
             m = addmod(m, mulmod(mulmod(z2, z2, p), a, p), p);
         }
         uint Qx = addmod(mulmod(m, m, p), p - addmod(s, s, p), p);
+
+        uint[3] memory Q;
         Q[0] = Qx;
         Q[1] = addmod(mulmod(m, addmod(s, p - Qx, p), p), p - mulmod(8, mulmod(Py2, Py2, p), p), p);
         Q[2] = mulmod(2, mulmod(Py, P[2], p), p);
@@ -182,7 +189,7 @@ contract Curve {
     // Multiplication dP. P affine, wNAF: w=5
     // Params: d, Px, Py
     // Output: Jacobian Q
-    function _mul(uint d, uint[2] P) public view returns (uint[3] Q) {
+    function _mul(uint d, uint[2] P) public view returns (uint[3]) {
         uint p = pp;
         if (d == 0) {
             return pointOfInfinity;
@@ -220,6 +227,8 @@ contract Curve {
         PREC[5] = _add(X, PREC[4]);
         PREC[6] = _add(X, PREC[5]);
         PREC[7] = _add(X, PREC[6]);
+
+        uint[3] memory Q;
 
         // Mult loop
         while(i > 0) {
@@ -263,9 +272,8 @@ contract Curve {
     }
 
     /// @dev See Curve.isPubKey
-    function isPubKey(uint[2] P) public view returns (bool isPK) {
-        isPK = onCurve(P);
-        return isPK;
+    function isPubKey(uint[2] P) public view returns (bool) {
+        return onCurve(P);
     }
 
     /// @dev See Curve.validateSignature
@@ -290,21 +298,21 @@ contract Curve {
         return Px % n == rs[0];
     }
 
-    function computePublicKey(uint priv) public view returns(uint[2] Q) {
+    function computePublicKey(uint priv) public view returns(uint[2]) {
         uint[2] memory generator = [Gx, Gy];
         uint[3] memory P = _mul(priv, generator);
         return toAffine(P);
     }
 
     // @dev Only used on the local node
-    function createSignature(bytes32 message, uint k, uint priv) public view returns (uint r, uint s) {
+    function createSignature(bytes32 message, uint k, uint priv) public view returns (uint, uint) {
         uint p = pp;
         uint n = nn;
         uint[2] memory generator = [Gx, Gy];
         uint[3] memory P = _mul(k, generator);
         ECCMath.toZ1(P, p);
-        r = P[0] % n;
-        s = mulmod(priv, r, n);
+        uint r = P[0] % n;
+        uint s = mulmod(priv, r, n);
         s = addmod(uint(message), s, n);
         uint k_1 = ECCMath.invmod(k, n); 
         s = mulmod(k_1, s, n);
@@ -312,9 +320,9 @@ contract Curve {
     }
 
     /// @dev See Curve.compress
-    function compress(uint[2] P) public pure returns (uint8 yBit, uint x) {
-        x = P[0];
-        yBit = P[1] & 1 == 1 ? 1 : 0;
+    function compress(uint[2] P) public pure returns (uint8, uint) {
+        uint x = P[0];
+        uint8 yBit = P[1] & 1 == 1 ? 1 : 0;
         return (yBit, x);
     }
 
