@@ -21,7 +21,7 @@
     "truffle-wallet-provider": "0.0.5"
   },
   "devDependencies": {
-      "solium": "^1.0.4",
+      "solium": "^1.0.4"
   },
   "repository": {
     "type": "git",
