@@ -32,7 +32,22 @@ contract('Curve', async (accounts) => {
         const secp256k1 = await curveFactory.createCurve([fieldSize], [groupOrder], [lowSmax], [cofactor], [Gx, Gy], [A], [B], {from: operator});
         const newCurve = secp256k1.logs[0].args.newCurve;
         return Curve.at(newCurve);
-    } 
+    }
+
+    async function createPrime256v1() {
+        const fieldSize = new BN("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF", 16);
+        const groupOrder = new BN("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", 16);
+        const cofactor = new BN(1);
+        const Gx = new BN("6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296", 16);
+        const Gy = new BN("4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5", 16);
+        const lowSmax = new BN("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0", 16);
+        const A = new BN("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFC", 16);
+        const B = new BN("5AC635D8AA3A93E7B3EBBD55769886BC651D06B0CC53B0F63BCE3C3E27D2604B", 16);
+
+        const secp256k1 = await curveFactory.createCurve([fieldSize], [groupOrder], [lowSmax], [cofactor], [Gx, Gy], [A], [B], {from: operator});
+        const newCurve = secp256k1.logs[0].args.newCurve;
+        return Curve.at(newCurve);
+    }
 
     it('check SECP256K1', async () => {
         // createCurve(uint256 fieldSize, uint256 groupOrder, uint256 lowSmax, uint256 cofactor, uint256[2] generator)
